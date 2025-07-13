@@ -38,16 +38,22 @@ class SensorConfig {
       BehaviorSubject<double>();
   StreamSubscription? _brightnessSubscription;
 
+  /// Lock white balance
+  late BehaviorSubject<bool> _lockWhiteBalanceController; // NEW
+  late Stream<bool> lockWhiteBalance$;
+
   SensorConfig.single({
     Sensor? sensor,
     FlashMode flashMode = FlashMode.none,
     double zoom = 0.0,
     CameraAspectRatios aspectRatio = CameraAspectRatios.ratio_4_3,
+    bool lockWhiteBalance = false,
   }) : this._(
           sensors: [sensor ?? Sensor.position(SensorPosition.back)],
           flash: flashMode,
           currentZoom: zoom,
           aspectRatio: aspectRatio,
+          lockWhiteBalance: lockWhiteBalance,
         );
 
   SensorConfig.multiple({
@@ -55,11 +61,13 @@ class SensorConfig {
     FlashMode flashMode = FlashMode.none,
     double zoom = 0.0,
     CameraAspectRatios aspectRatio = CameraAspectRatios.ratio_4_3,
+    bool lockWhiteBalance = false,
   }) : this._(
           sensors: sensors,
           flash: flashMode,
           currentZoom: zoom,
           aspectRatio: aspectRatio,
+          lockWhiteBalance: lockWhiteBalance,
         );
 
   SensorConfig._({
@@ -69,6 +77,7 @@ class SensorConfig {
 
     /// Zoom must be between 0.0 (no zoom) and 1.0 (max zoom)
     double currentZoom = 0.0,
+    bool lockWhiteBalance = false,
   }) {
     _flashModeController = BehaviorSubject<FlashMode>.seeded(flash);
     flashMode$ = _flashModeController.stream;
@@ -86,6 +95,10 @@ class SensorConfig {
     _brightnessSubscription = _brightnessController.stream
         .debounceTime(const Duration(milliseconds: 500))
         .listen((value) => CamerawesomePlugin.setBrightness(value));
+
+    _lockWhiteBalanceController =
+        BehaviorSubject<bool>.seeded(lockWhiteBalance);
+    lockWhiteBalance$ = _lockWhiteBalanceController.stream;
   }
 
   Future<void> setZoom(double zoom) async {

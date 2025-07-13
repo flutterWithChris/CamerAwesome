@@ -158,11 +158,14 @@ class PigeonSensor {
     required this.position,
     required this.type,
     this.deviceId,
+    this.lockWhiteBalance,
   });
 
   PigeonSensorPosition position;
 
   PigeonSensorType type;
+
+  bool? lockWhiteBalance;
 
   String? deviceId;
 

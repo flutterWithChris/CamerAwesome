@@ -25,6 +25,8 @@ import com.apparence.camerawesome.utils.isMultiCamSupported
 import io.flutter.plugin.common.EventChannel
 import io.flutter.view.TextureRegistry
 import java.util.concurrent.Executor
+import androidx.camera.camera2.interop.Camera2Interop
+import android.hardware.camera2.CaptureRequest   
 
 /// Hold the settings of the camera and use cases in this class and
 /// call updateLifecycle() to refresh the state
@@ -50,6 +52,7 @@ data class CameraXState(
     var flashMode: FlashMode = FlashMode.NONE,
     val onStreamReady: (state: CameraXState) -> Unit,
     var mirrorFrontCamera: Boolean = false,
+    val lockWhiteBalance: Boolean,
     val videoRecordingQuality: VideoRecordingQuality?,
     val videoOptions: AndroidVideoOptions?,
 ) : EventChannel.StreamHandler, SensorOrientation {
@@ -130,12 +133,24 @@ data class CameraXState(
 //                    .build()
 
 
-                val preview = if (aspectRatio != null) {
-                    Preview.Builder().setTargetAspectRatio(aspectRatio!!)
-                        .build()
-                } else {
-                    Preview.Builder().build()
+                // NEW: build Preview with optional AWB lock
+                val previewBuilder = if (aspectRatio != null) {
+                    Preview.Builder()
+                        .setTargetAspectRatio(aspectRatio!!)
+                    } else {
+                    Preview.Builder()
+                    }
+
+                    if (lockWhiteBalance) {
+                     Camera2Interop.Extender(previewBuilder)
+                      .setCaptureRequestOption(
+                        CaptureRequest.CONTROL_AWB_LOCK,
+                        true
+                      )
                 }
+
+                val preview = previewBuilder.build()
+
 
                 useCaseGroupBuilder.addUseCase(preview)
                 previews!!.add(preview)
@@ -156,6 +171,15 @@ data class CameraXState(
                                 }
                                 else ImageCapture.FLASH_MODE_OFF
                             )
+
+                            if (lockWhiteBalance) {
+                            Camera2Interop.Extender(imageCaptureBuilder)
+                                .setCaptureRequestOption(
+                                CaptureRequest.CONTROL_AWB_LOCK,
+                                true
+                                )
+                            }
+
                         }.build()
                     useCaseGroupBuilder.addUseCase(imageCapture)
                     imageCaptures.add(imageCapture)
@@ -316,9 +340,26 @@ data class CameraXState(
             recorderBuilder.setTargetVideoEncodingBitRate(videoOptions.bitrate.toInt())
         }
         val recorder = recorderBuilder.build()
-        return VideoCapture.Builder<Recorder>(recorder)
-            .setMirrorMode(if (mirrorFrontCamera) MirrorMode.MIRROR_MODE_ON_FRONT_ONLY else MirrorMode.MIRROR_MODE_OFF)
-            .build()
+        val videoBuilder = VideoCapture.Builder<Recorder>(recorder)
+                    .setMirrorMode(
+            if (mirrorFrontCamera) 
+                MirrorMode.MIRROR_MODE_ON_FRONT_ONLY 
+            else 
+                MirrorMode.MIRROR_MODE_OFF
+        )
+
+    // NEW: lock auto‐white‐balance at capture time
+                 if (lockWhiteBalance) {
+        Camera2Interop.Extender(videoBuilder)
+            .setCaptureRequestOption(
+                CaptureRequest.CONTROL_AWB_LOCK,
+                true
+            )
+    }
+
+    return videoBuilder.build()
+
+
     }
 
     @SuppressLint("RestrictedApi")

@@ -182,6 +182,7 @@ class CamerawesomePlugin {
     bool enableImageStream,
     bool enablePhysicalButton, {
     CaptureMode captureMode = CaptureMode.photo,
+    bool lockWhiteBalance = false,
     required ExifPreferences exifPreferences,
     required VideoOptions? videoOptions,
     required bool mirrorFrontCamera,

@@ -127,6 +127,7 @@ class CameraAwesomeX : CameraInterface, FlutterPlugin, ActivityAware {
         flashMode: String,
         captureMode: String,
         enableImageStream: Boolean,
+        lockWhiteBalance: Boolean,
         exifPreferences: ExifPreferences,
         videoOptions: VideoOptions?,
         callback: (Result<Boolean>) -> Unit
@@ -141,6 +142,8 @@ class CameraAwesomeX : CameraInterface, FlutterPlugin, ActivityAware {
         } else {
             activity!!.stopService(Intent(activity!!, PlayerService::class.java))
         }
+
+        val wbLock = lockWhiteBalance
 
         val cameraProvider = getCameraProvider()
 
